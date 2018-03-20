@@ -6,16 +6,41 @@ from keras.layers import Input
 import matplotlib.pyplot as plt
 from keras import optimizers
 
-def nn_model():
+sgd = optimizers.SGD(lr=0.07, decay=1e-6, momentum=0.95, nesterov=True)
+
+def deep_model():
     input_data = Input(shape=[1])
     layer1 = Dense(10, activation='relu', use_bias=True)(input_data)
     layer2 = Dense(10, activation='relu', use_bias=True)(layer1)
     layer3 = Dense(10, activation='relu', use_bias=True)(layer2)
     layer4 = Dense(10, activation='relu', use_bias=True)(layer3)
+    layer5 = Dense(10, activation='relu', use_bias=True)(layer4)
+    layer6 = Dense(10, activation='relu', use_bias=True)(layer5)
+    layer7 = Dense(10, activation='relu', use_bias=True)(layer6)
+    output = Dense(1, activation='linear', use_bias=True)(layer7)
+    model = keras.models.Model(input_data, output)
+    model.compile(loss='mse', optimizer='adam')
+    model.summary()
+    return model
+
+def shallow_model():
+    input_data = Input(shape=[1])
+    layer1 = Dense(230, activation='relu', use_bias=True)(input_data)
+    output = Dense(1, activation='linear', use_bias=True)(layer1)
+    model = keras.models.Model(input_data, output)
+    model.compile(loss='mse', optimizer='adam')
+    model.summary()
+    return model
+
+def middle_model():
+    input_data = Input(shape=[1])
+    layer1 = Dense(16, activation='relu', use_bias=True)(input_data)
+    layer2 = Dense(12, activation='relu', use_bias=True)(layer1)
+    layer3 = Dense(13, activation='relu', use_bias=True)(layer2)
+    layer4 = Dense(19, activation='relu', use_bias=True)(layer3)
     output = Dense(1, activation='linear', use_bias=True)(layer4)
     model = keras.models.Model(input_data, output)
-    sgd = optimizers.SGD(lr=0.07, decay=1e-6, momentum=0.95, nesterov=True)
-    model.compile(loss='mse', optimizer=sgd)
+    model.compile(loss='mse', optimizer='adam')
     model.summary()
     return model
 
@@ -34,9 +59,13 @@ def normalize(X_all, X_test):
     return X_all, X_test
 
 ## main program
+epochs = 20
 
-model = nn_model()
-xx = np.linspace(0.01,1,400000)
+model = deep_model()
+model2 = middle_model()
+model3 = shallow_model()
+
+xx = np.linspace(0.01,1,100000)
 yy_ = np.sin(5*np.pi*xx) / (5*np.pi*xx)
 
 ## shuffle data
@@ -57,11 +86,14 @@ label_val = label[0:nb_validation_samples]
 ## Normalizaion
 #train_, train_val = normalize(train_, train_val)
 
-
-model.fit(train_, label_, validation_data=(train_val, label_val), epochs=10, batch_size=128)
+model.fit(train_, label_, validation_data=(train_val, label_val), epochs=epochs, batch_size=512)
+model2.fit(train_, label_, validation_data=(train_val, label_val), epochs=epochs, batch_size=512)
+model3.fit(train_, label_, validation_data=(train_val, label_val), epochs=epochs, batch_size=512)
 
 result = model.predict(xx)
+result2 = model2.predict(xx)
+result3 = model3.predict(xx)
 
-plt.plot(xx, yy_, xx, result)
+plt.plot(xx, yy_, xx, result, xx, result2, xx, result3)
+plt.legend(('True','deep model','middle model','shallow model'))
 plt.show()
-
