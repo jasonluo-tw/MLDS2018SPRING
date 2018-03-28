@@ -1,6 +1,7 @@
 from tensorflow.examples.tutorials.mnist import input_data
 from tqdm import tqdm 
 import tensorflow as tf
+import pickle
 import numpy as np
 
 mnist = input_data.read_data_sets("MNIST_data/", one_hot=True)
@@ -30,7 +31,8 @@ y = tf.nn.softmax(tf.matmul(hidden2, W3) + b3) # output
 
 ## cross_entropy
 cross_entropy = tf.reduce_mean(-tf.reduce_sum(y_ * tf.log(y), reduction_indices=[1])) # what reduction_indices ?
-train_step = tf.train.AdagradOptimizer(0.3).minimize(cross_entropy)
+#train_step = tf.train.AdagradOptimizer(0.3).minimize(cross_entropy)
+train_step = tf.train.AdamOptimizer().minimize(cross_entropy)
 
 init = tf.global_variables_initializer()
 
@@ -46,5 +48,8 @@ with tf.Session() as sess:
     acc = sess.run(accuracy, feed_dict={x: mnist.test.images, y_: mnist.test.labels, keep_prob: 1})
 
     print('The accuracy on testing set:', acc)
-    W1_weights = sess.run(W1)
-    print(W1_weights.shape)
+    #W1_weights = sess.run(W1)
+    weightss = sess.run(tf.trainable_variables())
+    print(weightss)
+    with open('weights_adam.pickle', 'wb') as mysavedata:
+        pickle.dump(weightss, mysavedata)
