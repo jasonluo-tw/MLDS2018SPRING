@@ -3,9 +3,7 @@ import tensorflow as tf
 import pickle
 import numpy as np
 
-alpha = 0.5
 input_units = 784
-theta = []
 
 with open('./weights.pickle', 'rb') as myfile:
     weights0 = pickle.load(myfile)
@@ -13,10 +11,12 @@ with open('./weights.pickle', 'rb') as myfile:
 with open('./weights_adam.pickle', 'rb') as myfile2:
     weights1 = pickle.load(myfile2)
 
+alpha = 0.5
+theta = []
 for idx, wei0 in enumerate(weights0):
     theta.append([])
     theta[idx] = (1 - alpha) * wei0 + alpha * weights1[idx]
-    #print(theta)
+    #print(theta[idx].shape)
 
 W1 = tf.convert_to_tensor(theta[0], np.float32)
 B1 = tf.convert_to_tensor(theta[1], np.float32)
@@ -44,6 +44,7 @@ accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 mnist = input_data.read_data_sets("MNIST_data/", one_hot=True)
 
 init = tf.global_variables_initializer()
+
 
 with tf.Session() as sess:
     sess.run(init)
