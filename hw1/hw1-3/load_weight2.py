@@ -8,10 +8,11 @@ import numpy as np
 
 input_units = 784
 
-with open('./weights.pickle', 'rb') as myfile:
+with open('./weights_adam_bs64.pickle', 'rb') as myfile:
+#with open('./weights_adagrad_bs2048.pickle', 'rb') as myfile:
     weights0 = pickle.load(myfile)
 
-with open('./weights_adam.pickle', 'rb') as myfile2:
+with open('./weights_adam_bs2048.pickle', 'rb') as myfile2:
     weights1 = pickle.load(myfile2)
 
 
@@ -33,7 +34,8 @@ hidden2 = tf.nn.relu(tf.matmul(hidden1, W2) + B2)
 y = tf.nn.softmax(tf.matmul(hidden2, W3) + B3) # output
 ## cross_entropy
 #cross_entropy = tf.reduce_mean(-tf.reduce_sum(y_ * tf.log(y), reduction_indices=[1])) # what reduction_indices ?
-cross_entropy = tf.reduce_mean(-tf.reduce_sum(y_ * tf.log(tf.clip_by_value(y,1e-10,1.0)), reduction_indices=[1]))
+cross_entropy = tf.reduce_mean(-tf.reduce_sum(y_ * tf.log(tf.clip_by_value(y,1e-10,5.0)), reduction_indices=[1]))
+#cross_entropy = -tf.reduce_sum(y_ * tf.log(tf.clip_by_value(y,1e-10,1.0)), reduction_indices=[1])
 ## accuracy
 correct_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(y_, 1))
 accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
@@ -43,6 +45,8 @@ mnist = input_data.read_data_sets("MNIST_data/", one_hot=True)
 
 init = tf.global_variables_initializer()
 
+train_acc_list = []
+train_loss_list =[]
 acc_list = []
 loss_list = []
 xx = []
@@ -58,12 +62,21 @@ with tf.Session() as sess:
             theta.append([])
             theta[idx] = (1 - alpha) * wei0 + alpha * weights1[idx]
             #print(theta)
+        # train acc loss
+        train_acc = sess.run(accuracy, feed_dict={x: mnist.train.images, y_: mnist.train.labels, 
+                W1: theta[0], B1: theta[1], W2: theta[2], B2: theta[3], W3: theta[4], B3: theta[5]})
+        train_loss = sess.run(cross_entropy, feed_dict={x: mnist.train.images, y_: mnist.train.labels, 
+            W1: theta[0], B1: theta[1], W2: theta[2], B2: theta[3], W3: theta[4], B3: theta[5]})
+        # test acc loss
         acc = sess.run(accuracy, feed_dict={x: mnist.test.images, y_: mnist.test.labels, 
             W1: theta[0], B1: theta[1], W2: theta[2], B2: theta[3], W3: theta[4], B3: theta[5]})
         loss = sess.run(cross_entropy, feed_dict={x: mnist.test.images, y_: mnist.test.labels, 
             W1: theta[0], B1: theta[1], W2: theta[2], B2: theta[3], W3: theta[4], B3: theta[5]})
         #print('The accuracy, loss on testing set:', acc, loss)
         xx.append(alpha)
+
+        train_acc_list.append(train_acc)
+        train_loss_list.append(train_loss)
         acc_list.append(acc)
         loss_list.append(loss)
         alpha += 0.1
@@ -73,8 +86,13 @@ ax = fig.add_subplot(111)
 
 ax2 = ax.twinx()
 
-p1, = ax.plot(xx, acc_list, 'g-', label='accuracy')
-p2, = ax2.plot(xx, loss_list, 'b-', label='loss')
+ax.plot(xx, train_acc_list, 'g-', label='Train')
+ax.plot(xx, acc_list, 'g--', label='Test')
+ax.set_ylim((0.6,1.0))
+
+ax2.plot(xx, train_loss_list, 'b-')
+ax2.plot(xx, loss_list, 'b--')
+ax2.set_ylim((0.0,0.6))
 fig.legend(loc=2, bbox_to_anchor=(0,1), bbox_transform=ax.transAxes)
 
 ax.set_xlabel('alpha')

@@ -19,48 +19,43 @@ mnist = input_data.read_data_sets("MNIST_data/", one_hot=True)
 #sess = tf.InteractiveSession()
 ## set up variables
 input_units = 784
-h1_units = 512
+h1_units = 256
 h2_units = 128
 W1 = tf.Variable(tf.truncated_normal([input_units, h1_units], stddev=0.1)) # 初始化參數
-b1 = tf.Variable(tf.zeros([h1_units]))
 W2 = tf.Variable(tf.truncated_normal([h1_units, h2_units], stddev=0.1))
-b2 = tf.Variable(tf.zeros([h2_units]))
 W3 = tf.Variable(tf.zeros([h2_units, 10]))  # 前面是input_dim 後面是想output之dimension
-b3 = tf.Variable(tf.zeros([10]))
 
 ## set up place-holder
 x = tf.placeholder(tf.float32, [None, input_units]) # input_placeholder
 y_ = tf.placeholder(tf.float32, [None, 10]) # label_placeholder
 
 ## set hidden-layer
-hidden1 = tf.nn.relu(tf.matmul(x, W1) + b1)
-hidden2 = tf.nn.relu(tf.matmul(hidden1, W2) + b2)
-y = tf.nn.softmax(tf.matmul(hidden2, W3) + b3) # output
-
+hidden1 = tf.nn.relu(tf.matmul(x, W1))
+hidden2 = tf.nn.relu(tf.matmul(hidden1, W2))
+y = tf.nn.softmax(tf.matmul(hidden2, W3)) # output
 ## cross_entropy
 #cross_entropy = -tf.reduce_sum(y_ * tf.log(y), reduction_indices=[1]) # what reduction_indices ?
-cross_entropy = tf.reduce_mean(-tf.reduce_sum(y_ * tf.log(tf.clip_by_value(y,1e-10,10.0)), reduction_indices=[1]))
+cross_entropy = tf.reduce_mean(-tf.reduce_sum(y_ * tf.log(tf.clip_by_value(y,1e-10,1.0)), reduction_indices=[1]))
+#cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=y_, logits=y))
 
-mean_cross_entropy = tf.reduce_mean(-tf.reduce_sum(y_ * tf.log(tf.clip_by_value(y,1e-10,10.0)), reduction_indices=[1]))
+mean_cross_entropy = tf.reduce_mean(-tf.reduce_sum(y_ * tf.log(tf.clip_by_value(y,1e-10,1.0)), reduction_indices=[1]))
 
-train_step = tf.train.AdagradOptimizer(0.3).minimize(cross_entropy)
-#train_step = tf.train.AdamOptimizer().minimize(cross_entropy)
+#train_step = tf.train.AdagradOptimizer(1e-2).minimize(cross_entropy)
+train_step = tf.train.AdamOptimizer().minimize(cross_entropy)
 
 init = tf.global_variables_initializer()
 
+epochs = 200
 batch_size = args["batch_size"]
-epochs = 20 * int(floor(len(mnist.train.images) / batch_size))
-#step_num = int(floor(len(mnist.train.images) / batch_size))
+step_num = int(floor(len(mnist.train.images) / batch_size))
 
 with tf.Session() as sess:
     sess.run(init)
     for i in tqdm(range(epochs)):
-        batch_xs, batch_ys = mnist.train.next_batch(batch_size)
-        sess.run(train_step, feed_dict={x: batch_xs, y_: batch_ys})
         # Train with batch
-        #for j in range(step_num):
-        #    batch_xs, batch_ys = mnist.train.next_batch(batch_size)
-        #    sess.run(train_step, feed_dict={x: batch_xs, y_: batch_ys})
+        for j in range(step_num):
+            batch_xs, batch_ys = mnist.train.next_batch(batch_size)
+            sess.run(train_step, feed_dict={x: batch_xs, y_: batch_ys})
 
     ## correct, evaluate
     correct_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(y_, 1))

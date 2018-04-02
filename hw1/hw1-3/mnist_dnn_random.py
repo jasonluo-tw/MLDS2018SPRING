@@ -16,7 +16,6 @@ args = vars(ap.parse_args())
 
 mnist = input_data.read_data_sets("MNIST_data/", one_hot=True)
 
-#sess = tf.InteractiveSession()
 ## set up variables
 input_units = 784
 h1_units = 512
@@ -43,49 +42,59 @@ cross_entropy = tf.reduce_mean(-tf.reduce_sum(y_ * tf.log(tf.clip_by_value(y,1e-
 
 mean_cross_entropy = tf.reduce_mean(-tf.reduce_sum(y_ * tf.log(tf.clip_by_value(y,1e-10,10.0)), reduction_indices=[1]))
 
-train_step = tf.train.AdagradOptimizer(0.3).minimize(cross_entropy)
-#train_step = tf.train.AdamOptimizer().minimize(cross_entropy)
+#train_step = tf.train.AdagradOptimizer(0.1).minimize(cross_entropy)
+train_step = tf.train.AdamOptimizer().minimize(cross_entropy)
 
 init = tf.global_variables_initializer()
 
+epochs = 3000
 batch_size = args["batch_size"]
-epochs = 20 * int(floor(len(mnist.train.images) / batch_size))
-#step_num = int(floor(len(mnist.train.images) / batch_size))
+step_num = int(floor(len(mnist.train.images) / batch_size))
+
+train_acc_list = []
+train_loss_list = []
+acc_list = []
+loss_list = []
+
+train_images = mnist.train.images
+train_labels = mnist.train.labels
+## shuffle the labels
+indices = np.arange(train_labels.shape[0])
+np.random.shuffle(indices)
+train_labels = train_labels[indices]
 
 with tf.Session() as sess:
     sess.run(init)
-    for i in tqdm(range(epochs)):
-        batch_xs, batch_ys = mnist.train.next_batch(batch_size)
-        sess.run(train_step, feed_dict={x: batch_xs, y_: batch_ys})
-        # Train with batch
-        #for j in range(step_num):
-        #    batch_xs, batch_ys = mnist.train.next_batch(batch_size)
-        #    sess.run(train_step, feed_dict={x: batch_xs, y_: batch_ys})
-
     ## correct, evaluate
     correct_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(y_, 1))
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
-    ## accuracy
-    acc = sess.run(accuracy, feed_dict={x: mnist.test.images, y_: mnist.test.labels})
-    acc_train = sess.run(accuracy, feed_dict={x: mnist.train.images, y_: mnist.train.labels})
-    ## loss
-    loss = sess.run(mean_cross_entropy, feed_dict={x: mnist.test.images, y_: mnist.test.labels})
-    loss_train = sess.run(mean_cross_entropy, feed_dict={x: mnist.train.images, y_: mnist.train.labels})
 
-    grads_wrt_input = sess.run(tf.gradients(cross_entropy, x), feed_dict={x: mnist.train.images, y_: mnist.train.labels})
-    #sensitivity = np.sqrt(np.sum(np.mean(grads_wrt_input[0], axis=0) ** 2))
-    sensitivity = np.sqrt(np.sum(grads_wrt_input[0] ** 2))
-    print(sensitivity)
-    print('The accuracy on testing set:', acc)
-    print('The accuracy on training set:', acc_train)
+    for i in tqdm(range(epochs)):
+        # Train with batch
+        for idx in range(step_num):
+            batch_xs = train_images[idx*batch_size:(idx+1)*batch_size]
+            batch_ys = train_labels[idx*batch_size:(idx+1)*batch_size]
+            sess.run(train_step, feed_dict={x: batch_xs, y_: batch_ys})
 
-    weightss = sess.run(tf.trainable_variables())
+        ## accuracy
+        acc = sess.run(accuracy, feed_dict={x: mnist.test.images, y_: mnist.test.labels})
+        acc_train = sess.run(accuracy, feed_dict={x: train_images, y_: train_labels})
+        ## loss
+        loss = sess.run(mean_cross_entropy, feed_dict={x: mnist.test.images, y_: mnist.test.labels})
+        loss_train = sess.run(mean_cross_entropy, feed_dict={x: train_images, y_: train_labels})
+        
+        train_acc_list.append(acc_train)
+        train_loss_list.append(loss_train)
+        acc_list.append(acc)
+        loss_list.append(loss)
+        
+        if i%100 == 0:
+            print('train loss:', loss_train)
 
-    if args["save_weights"] is True:
-        with open('weights_adam.pickle', 'wb') as mysavedata:
-            pickle.dump(weightss, mysavedata)
     if args["save_al"] is True:
-        file_out = open('./loss_acc_seni.csv', 'a+')
+        file_out = open('./random_loss_acc.csv', 'w')
         s = csv.writer(file_out, delimiter=',', lineterminator='\n')
-        s.writerow([batch_size, loss_train, loss, acc_train, acc, sensitivity])
+        for i in range(len(train_acc_list)):
+            s.writerow([train_loss_list[i], loss_list[i], train_acc_list[i], acc_list[i]])
         file_out.close()
+

@@ -71,7 +71,7 @@ xx = np.linspace(0.01,1,300000)
 #xx = np.random.uniform(low=0.01, high=1.0, size=400000)
 #yy2_ = np.sign(np.sin(5 * np.pi * xx2))
 
-yy_ = np.sign(np.sin(5 *np.pi * xx))
+yy_ = np.sin(5 * np.pi * xx) * np.cos(5 * np.pi * xx)
 
 ## shuffle data
 indices = np.arange(xx.shape[0])
