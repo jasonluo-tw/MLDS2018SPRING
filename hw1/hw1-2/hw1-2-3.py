@@ -247,8 +247,8 @@ for epoch in range(1, args.epochs + 1):
     if epoch % 3 ==0:
         print(epoch)
 #        torch.save(model,'../../model_save/model_DNN_1_%s.pt' %epoch)
-np.save('./min_ratio', HH)
-np.save('./gradient_norm', gg)
-np.save('./acc_DNN3', ACC)
-np.save('./loss_all_DNN3', l_a)
-np.save('./loss_DNN3', LL)
+np.save('./npy_data/min_ratio', HH)
+np.save('./npy_data/gradient_norm', gg)
+np.save('./npy_data/acc_DNN3', ACC)
+np.save('./npy_data/loss_all_DNN3', l_a)
+np.save('./npy_data/loss_DNN3', LL)
