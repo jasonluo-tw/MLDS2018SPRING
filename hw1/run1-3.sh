@@ -16,6 +16,11 @@ then
  echo 'interpolation plot'
  cd hw1-3
  python plot_interpo.py
+elif [ $1 -eq 31 ]
+then
+ echo "interpolation for different optimizer"
+ cd hw1-3
+ python plot_interpo_op.py
 elif [ $1 -eq 4 ]
 then
  echo 'plot model sensitivity'
