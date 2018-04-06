@@ -8,7 +8,7 @@ How to run the codes
 
 ### HW1-2 : Optimization
 - **Visualize the optimization process:**
-	- **Observe gradient norm during training:**
+- **Observe gradient norm during training:**
 - **What happens when gradient is almost zero:**
 
 ### HW1-3 : Generalization
