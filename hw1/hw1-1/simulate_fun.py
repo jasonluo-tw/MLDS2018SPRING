@@ -6,8 +6,6 @@ from keras.layers import Input
 import matplotlib.pyplot as plt
 from keras import optimizers
 
-sgd = optimizers.SGD(lr=0.07, decay=1e-6, momentum=0.95, nesterov=True)
-
 def deep_model():
     input_data = Input(shape=[1])
     layer1 = Dense(10, activation='relu', use_bias=True)(input_data)
@@ -44,29 +42,15 @@ def middle_model():
     model.summary()
     return model
 
-def normalize(X_all, X_test):
-    # Feature normalizaion with train and test X
-    X_train_test = np.concatenate((X_all, X_test))
-    mu = (sum(X_train_test) / X_train_test.shape[0])
-    sigma = np.std(X_train_test)
-    #mu = np.tile(mu, (X_train_test.shape[0], 1))
-    #sigma = np.tile(sigma, (X_train_test.shape[0], 1))
-    X_train_test_normed = (X_train_test - mu) / sigma
-
-    # Split to train, test again
-    X_all = X_train_test_normed[0:X_all.shape[0]]
-    X_test = X_train_test_normed[X_all.shape[0]:]
-    return X_all, X_test
-
 ## main program
-epochs = 20
+epochs = 15000
 
 model = deep_model()
 model2 = middle_model()
 model3 = shallow_model()
 
-xx = np.linspace(0.01,1,100000)
-yy_ = np.sin(5*np.pi*xx) / (5*np.pi*xx)
+xx = np.linspace(0.01,1,50000)
+yy_ = np.sin(20*np.pi*xx) / (2*np.pi*xx + 0.5) * np.tan(2*np.pi*xx)
 
 ## shuffle data
 indices = np.arange(xx.shape[0])
@@ -83,17 +67,32 @@ train_val = train[0:nb_validation_samples]
 label_ = label[nb_validation_samples:]
 label_val = label[0:nb_validation_samples]
 
-## Normalizaion
-#train_, train_val = normalize(train_, train_val)
-
-model.fit(train_, label_, validation_data=(train_val, label_val), epochs=epochs, batch_size=512)
-model2.fit(train_, label_, validation_data=(train_val, label_val), epochs=epochs, batch_size=512)
-model3.fit(train_, label_, validation_data=(train_val, label_val), epochs=epochs, batch_size=512)
+h_deep = model.fit(train_, label_, validation_data=(train_val, label_val), epochs=epochs, batch_size=1024, verbose=2)
+h_middle = model2.fit(train_, label_, validation_data=(train_val, label_val), epochs=epochs, batch_size=1024, verbose=2)
+h_shallow = model3.fit(train_, label_, validation_data=(train_val, label_val), epochs=epochs, batch_size=1024, verbose=2)
 
 result = model.predict(xx)
 result2 = model2.predict(xx)
 result3 = model3.predict(xx)
 
+plt.figure()
 plt.plot(xx, yy_, xx, result, xx, result2, xx, result3)
+plt.xlabel('x')
+plt.ylabel('y')
+plt.title(r'$\frac{sin(20 \pi x)}{2 \pi x + 0.5}*tan(2 * \pi x)$')
 plt.legend(('True','deep model','middle model','shallow model'))
-plt.show()
+plt.savefig('fun1.png')
+
+plt.figure()
+x_epo = np.linspace(1, epochs, epochs)
+plt.semilogy(x_epo, h_deep.history['loss'], 'orange')
+plt.semilogy(x_epo, h_middle.history['loss'], 'green')
+plt.semilogy(x_epo, h_shallow.history['loss'], 'red')
+plt.xlabel("epochs")
+plt.ylabel("loss (mse)")
+plt.title('loss')
+plt.legend(('deep model','middle model','shallow model'), loc='upper right')
+
+plt.savefig("fun1_loss.png")
+
+#plt.show()

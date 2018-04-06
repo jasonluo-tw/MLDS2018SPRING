@@ -7,8 +7,6 @@ from keras.layers import Input
 import matplotlib.pyplot as plt
 from keras import optimizers
 
-sgd = optimizers.SGD(lr=0.07, decay=1e-6, momentum=0.95, nesterov=True)
-
 def deep_model():
     input_data = Input(shape=[1])
     layer1 = Dense(10, activation='relu', use_bias=True)(input_data)
@@ -60,18 +58,16 @@ def normalize(X_all, X_test):
     return X_all, X_test
 
 ## main program
-epochs = 20
+epochs = 15000
 
 model = deep_model()
 model2 = middle_model()
 model3 = shallow_model()
 
-xx = np.linspace(0.01,1,300000)
+xx = np.linspace(0.01,1,50000)
 
-#xx = np.random.uniform(low=0.01, high=1.0, size=400000)
-#yy2_ = np.sign(np.sin(5 * np.pi * xx2))
 
-yy_ = np.sin(5 * np.pi * xx) * np.cos(5 * np.pi * xx)
+yy_ = 2 * np.sin(20 * np.pi * xx) * np.cos(5 * np.pi * xx)
 
 ## shuffle data
 indices = np.arange(xx.shape[0])
@@ -88,17 +84,31 @@ train_val = train[0:nb_validation_samples]
 label_ = label[nb_validation_samples:]
 label_val = label[0:nb_validation_samples]
 
-## Normalizaion
-#train_, train_val = normalize(train_, train_val)
-
-model.fit(train_, label_, validation_data=(train_val, label_val), epochs=epochs, batch_size=512)
-model2.fit(train_, label_, validation_data=(train_val, label_val), epochs=epochs, batch_size=512)
-model3.fit(train_, label_, validation_data=(train_val, label_val), epochs=epochs, batch_size=512)
+h_deep = model.fit(train_, label_, validation_data=(train_val, label_val), epochs=epochs, batch_size=1024, verbose=2)
+h_middle = model2.fit(train_, label_, validation_data=(train_val, label_val), epochs=epochs, batch_size=1024, verbose=2)
+h_shallow = model3.fit(train_, label_, validation_data=(train_val, label_val), epochs=epochs, batch_size=1024, verbose=2)
 
 result = model.predict(xx)
 result2 = model2.predict(xx)
 result3 = model3.predict(xx)
 
+plt.figure()
 plt.plot(xx, yy_, xx, result, xx, result2, xx, result3)
+plt.xlabel('x')
+plt.ylabel('y')
+plt.title('2*sin(20x)cos(5x)')
 plt.legend(('True','deep model','middle model','shallow model'), loc='upper right')
-plt.show()
+plt.savefig("fun3.png")
+
+plt.figure()
+x_epo = np.linspace(1, epochs, epochs)
+plt.semilogy(x_epo, h_deep.history['loss'], 'orange')
+plt.semilogy(x_epo, h_middle.history['loss'], 'green')
+plt.semilogy(x_epo, h_shallow.history['loss'], 'red')
+plt.xlabel("epochs")
+plt.ylabel("loss (mse)")
+plt.title('loss')
+plt.legend(('deep model','middle model','shallow model'), loc='upper right')
+
+plt.savefig("fun3_loss.png")
+#plt.show()
