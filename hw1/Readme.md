@@ -17,7 +17,8 @@ How to run the codes
 - **Number of parameters v.s. Generalization:**
 	在hw1的資料夾底下跑`bash run1-3.sh 2`
 - **Flatness v.s. Generalization - part1:**
-	在hw1的資料夾底下跑`bash run1-3.sh 3`
+	在hw1的資料夾底下跑`bash run1-3.sh 3` for different batch size
+	在hw1的資料夾底下跑`bash run1-3.sh 31` for different optimizer
 - **Flatness v.s. Generalization - part2:**
 	在hw1的資料夾底下跑`bash run1-3.sh 4`
 - **Flatness v.s. Generalization - part3:**
