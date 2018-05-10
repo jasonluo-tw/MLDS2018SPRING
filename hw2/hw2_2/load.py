@@ -57,6 +57,27 @@ def readVocs(corpus, corpus_name):
     print(pairs[0:10])
     return voc, pairs
 
+def readVocs_test(corpus, corpus_name):
+    print("Reading lines.....")
+
+    # combine every two lines into pairs and normalize\
+    with open(corpus) as f:
+        content = f.read()
+    parts = content.split("+++$+++")
+    parts = [part.strip().split('\n') for part in parts]
+    pairs = []
+    for part in parts:
+        for i in range(len(part)):
+            try:
+                pairs.append(["".join(part[i].split()), "".join(part[i+1].split())])
+            except:
+                pairs.append(["".join(part[i].split()), "".join(part[i].split())])
+
+
+    voc = Voc(corpus_name)
+    print(pairs[-10:-1])
+    return voc, pairs
+
 def filterPair(p):
     return len(p[0]) < MAX_LENGTH and \
             len(p[1]) < MAX_LENGTH and \
@@ -88,7 +109,7 @@ def prepareData(corpus, corpus_name, word_model):
 
 
 def prepareData_test(corpus, corpus_name, word_model):
-    voc, pairs = readVocs(corpus, corpus_name)
+    voc, pairs = readVocs_test(corpus, corpus_name)
     print("Read {!s} sentence pairs".format(len(pairs)))
     #pairs = filterPairs(pairs)
     #print("Trimmed to {!s} sentence pairs".format(len(pairs)))
@@ -146,6 +167,9 @@ def gensim_model(corpus, corpus_name, SIZE=128, MIN_COUNT=8):
     model.save(os.path.join(directory, '{!s}'.format('word_emb')))
     return model, sentences
 
+corpus = './test_input.txt'
+voc, pairs = loadPrepareData_test(corpus)
+print(len(pairs))
 
 #SIZE = 128
 #MIN_COUNT = 200
