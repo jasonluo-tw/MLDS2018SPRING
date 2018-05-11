@@ -4,11 +4,15 @@ from math import floor
 import os
 from gensim.models import Word2Vec
 from tqdm import tqdm
-import model2
 import tensorflow as tf
-from class_model import video2seq
+#from class_model import video2seq
+from class_model_vari import video2seq
+import sys
+import os
+
+dir_path = sys.argv[2].rstrip('/')
 # import label data
-label_datas = pd.read_json('./MLDS_hw2_1_data/training_label.json')
+label_datas = pd.read_json(dir_path+'/training_label.json')
 sentences = label_datas['caption'].tolist()
 
 # start to prepare input train and output
@@ -26,7 +30,7 @@ for senti in sentences:
 
         if len(com) > 25:
             continue
-        if check_ == 2:
+        if check_ == 3:
             continue
         check_ += 1
         com = ['<BOS>'] + ss.rstrip('.').split() + ['<EOS>']
@@ -36,7 +40,7 @@ for senti in sentences:
 
 # set up word2vec model
 #w2vec_model = Word2Vec(w2vec, size=1, min_count=3)
-w2vec_model = Word2Vec.load('./dicts/w2vec_bleu062.model')
+w2vec_model = Word2Vec.load('./dicts/w2vec.model')
 
 del w2vec
 del sentences
@@ -63,7 +67,7 @@ for i in range(len(label_datas)):
             com = ss.rstrip('.').split()
             if len(com) > 25:
                 continue
-            if check_ == 2:
+            if check_ == 3:
                 break
             check_ += 1
             index_id.append(idd)
@@ -98,20 +102,20 @@ print(len(index_id), len(decoder_inputs), len(labels), len(loss_mask), len(decod
 
 #train_data(1450, 80, 4096)
 train_data = {}
-trainlist = os.popen('ls ./MLDS_hw2_1_data/training_data/feat/').read().split()
+trainlist = os.popen('ls '+dir_path+'/training_data/feat/').read().split()
 
 # import training data
 print('Start loading data...')
 for index, fi in tqdm(enumerate(trainlist)):
-    train_data[fi.rstrip('.npy')] = np.load('./MLDS_hw2_1_data/training_data/feat/' + fi)
+    train_data[fi.rstrip('.npy')] = np.load(dir_path+'/training_data/feat/' + fi)
 
 #print(train_data[index_id[0]])
 
 
 
 ## define the batch size epochs
-epochs = 50
-batch_size = 50
+epochs = 200
+batch_size = 64
 
 
 
@@ -131,7 +135,7 @@ step_num = int(floor(len(labels) / batch_size))
 #compare = np.array(compare)
 #compare = compare[shuffle_indices]
 #print(compare[3],'\n', index_id[3],'\n', labels[3],'\n',decoder_inputs[3],'\n',decoder_length[3],'\n', loss_mask[3])
-model = video2seq(dicts_size, max_seq_length, batch_size)
+model = video2seq(dicts_size, max_seq_length, batch_size, float(sys.argv[1]))
 model.build_model()
 model.build_encoder()
 model.build_decoder()
@@ -140,17 +144,18 @@ saver = tf.train.Saver()
 
 init = tf.global_variables_initializer()
 ## model path
-checkpoint_dir = './models/bleu062_4/'
+#checkpoint_dir = './models/bleu062_4/'
+loss_lists = []
 ## sess
 with tf.Session() as sess:
     sess.run(init)
 
-    ckpt = tf.train.get_checkpoint_state(checkpoint_dir)
-    saver.restore(sess, ckpt.model_checkpoint_path)
+    #ckpt = tf.train.get_checkpoint_state(checkpoint_dir)
+    #saver.restore(sess, ckpt.model_checkpoint_path)
 
-    for i in range(epochs):
+    for i in range(1):
         ## Train with batch
-        for idx in range(step_num):
+        for idx in range(1):
             indice = np.arange(idx*batch_size, (idx+1)*batch_size)
             video_in = np.array([train_data[ii] for ii in index_id[idx*batch_size:(idx+1)*batch_size]])
             video_in.reshape(batch_size, 80, 4096)
@@ -160,9 +165,9 @@ with tf.Session() as sess:
             
             model.input_data(video_in, label_, decoder_, target_)
             loss_train, _ = model.run_train(sess)
+            cross_loss, eva_index = model.run_eval(sess) # greedy helper
             #print('ttttest:', ttest)
             if i % 5 == 0 and idx == 0:
-                cross_loss, eva_index = model.run_eval(sess) # greedy helper
                 print('\n')
                 print('now epochs:', i, 'train loss:', loss_train, 'eval loss:', cross_loss)
                 print('#########################################')
@@ -177,9 +182,21 @@ with tf.Session() as sess:
                     if indexx == 2:
                         break
                     print(w2vec_model.wv.index2word[int(indexx-1)], end= ' ')
+
+        loss_lists.append([loss_train, cross_loss])
+    if(os.path.isdir('./models')):
+        print('\n')
+        print('Directory exist!!!')
+    else:
+        print('\n')
+        print('No. Create one')
+        os.mkdir('./models')
     saver.save(sess, './models/video2seq_model.ckpt')
 
 ## save w2vec model
 
 w2vec_model.save('./dicts/w2vec.model')
 
+#with open('training_loss'+str(sys.argv[1]).replace('.', '')+'.txt', 'w') as f:
+#    for ii, jj in loss_lists:
+#        f.write('train_loss: '+str(ii)+' eval_loss: '+str(jj))
