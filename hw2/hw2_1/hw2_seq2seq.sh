@@ -5,9 +5,9 @@ if [ -d "./models" ]; then
 	echo "model exists"
 else
 	echo "model not exists"
-	#wget --no-check-certificate "" -O models.tar.gz
+	wget --no-check-certificate "https://www.dropbox.com/s/6lziyftl2ru5tj5/models.tar.gz?dl=1" -O models.tar.gz
+	tar zxvf models.tar.gz
 fi
 
-tar zxvf models.tar.gz
 
 python testing.py $1 $2
