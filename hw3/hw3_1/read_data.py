@@ -9,6 +9,7 @@ class read_imgs():
         self.length = 0
         self.now_size = 0
         self.imgs = []
+        self.tags = False
     
     def read_source1(self, dirs):
 
@@ -23,26 +24,31 @@ class read_imgs():
         ## define some variables
         self.length = self.length + len(trainlist)
 
-
+    
     def next_batch(self, batch_size, normal=False): 
         
         next_size = self.now_size + batch_size
-        if next_size >= self.length:
+        if next_size > self.length:
             next_imgs0 = np.array(self.imgs[self.now_size:])
             
             next_size = next_size - self.length
-            next_imgs1 = np.array(self.imgs[0:next_size])
-
+            next_imgs1 = np.array(self.imgs[:next_size])
             next_imgs = np.concatenate((next_imgs0, next_imgs1), axis=0)
+        
+        elif next_size == self.length:
+            next_imgs = np.array(self.imgs[self.now_size:])
+            next_size = 0
+
         else:
             next_imgs = np.array(self.imgs[self.now_size:next_size])
+
         
         self.now_size = next_size
         
         # if normal=True, normalize data from -1 to 1
         if normal:
             next_imgs = (next_imgs / 255.) * 2 - 1
-
+        
         return next_imgs
 
     def read_source2(self, dirs, resize = False):
@@ -66,17 +72,13 @@ class read_imgs():
     def shuffle_data(self):
         import random
         random.shuffle(self.imgs)
+        
 
 if __name__ == '__main__':
-
+    from tqdm import tqdm
     datasets = read_imgs()
-    datasets.read_source2('./dataset/AnimeDataset/faces/', True)
     datasets.read_source1('./dataset/extra_data/images/')
-    #aa = datasets.next_batch(200)
+    datasets.shuffle_data()
     
-    import sys
-    print(sys.getsizeof(datasets.imgs))
-    print(sys.getsizeof(aa), aa.shape, datasets.now_size)
-    
-    #plt.imshow(aa[0])
-    #plt.show()
+    next_imgs = datasets.next_batch(128)
+

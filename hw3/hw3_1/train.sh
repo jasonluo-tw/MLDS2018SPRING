@@ -1,5 +1,5 @@
 #!/bin/bash
 
-python train.py
+python train_cgan.py
 
 shutdown -h +5
