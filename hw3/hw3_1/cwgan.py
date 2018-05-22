@@ -37,14 +37,10 @@ class image_gan():
         # fake images, real texts
         
         # Two Loss Functions for discriminator
-        self.d_loss_real = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits = self.Dx, labels = tf.ones_like(self.Dx)))
-        self.d_loss_fake = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits = self.Dg, labels = tf.zeros_like(self.Dg)))
-        self.d_loss_wrong_text = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits = self.Dw, labels = tf.zeros_like(self.Dw)))
+        self.d_total_loss = tf.reduce_mean((self.Dw + self.Dg) / 2. - self.Dx)
         
-        self.d_total_loss = self.d_loss_real + self.d_loss_fake + self.d_loss_wrong_text
         # Loss function for generator
-        self.g_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits = self.Dg, labels = tf.ones_like(self.Dg)))
-
+        self.g_loss = tf.reduce_mean(- self.Dg)
 
         # Get the varabiles for different network
         tvars = tf.trainable_variables()
@@ -52,10 +48,13 @@ class image_gan():
         g_vars = [var for var in tvars if 'g_' in var.name]
 
         # Train approch for the discriminator
-        self.d_trainer = tf.train.AdamOptimizer(0.0003, beta1=0.5).minimize(self.d_total_loss, var_list=d_vars)
+        self.d_trainer = tf.train.RMSPropOptimizer(0.00005).minimize(self.d_total_loss, var_list=d_vars)
 
         # Train approch for the generator
-        self.g_trainer = tf.train.AdamOptimizer(0.0003, beta1=0.5).minimize(self.g_loss, var_list=g_vars)
+        self.g_trainer = tf.train.RMSPropOptimizer(0.00005).minimize(self.g_loss, var_list=g_vars)
+
+        # Clip discriminator weights
+        self.clip_updates = [w.assign(tf.clip_by_value(w, -1e-2, 1e-2)) for w in d_vars]
 
     def generate_image(self, sess, z, texts):
         input_data = {}
@@ -72,6 +71,7 @@ class image_gan():
         input_data[self.x_placeholder] = real_images
         input_data[self.text_true] = right_texts
         input_data[self.text_wrong] = wrong_texts
+        sess.run(self.clip_updates, feed_dict=input_data)
         _, d_total_loss = sess.run([self.d_trainer, self.d_total_loss], feed_dict=input_data)
 
         return d_total_loss

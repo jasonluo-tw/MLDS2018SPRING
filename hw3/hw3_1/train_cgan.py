@@ -4,7 +4,8 @@ import os
 import tensorflow as tf
 from tqdm import tqdm
 import matplotlib.pyplot as plt
-from cgan import image_gan
+#from cgan import image_gan
+from cwgan import image_gan
 from read_data_cgan import read_imgs
 from read_data_cgan import setup_dicts
 import math

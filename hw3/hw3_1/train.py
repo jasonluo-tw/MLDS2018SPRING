@@ -4,11 +4,12 @@ import os
 import tensorflow as tf
 from tqdm import tqdm
 import matplotlib.pyplot as plt
-from gan_v4 import image_gan
+#from gan_v4 import image_gan
+from wgan_v4 import image_gan
 from read_data import read_imgs
 import math
 
-print("Now train gan_v4_1 ...")
+print("Now train wgan_v4 ...")
 ####### Define some variables
 
 batch_size = 64
@@ -77,12 +78,12 @@ with tf.Session() as sess:
                 plt.imshow(im)
 
             #plt.show()
-            plt.savefig('img4_10/test_img'+str(itera)+'.png')
+            plt.savefig('img4_w/test_img'+str(itera)+'.png')
 
-    saver.save(sess, './models/gan_v4_10.ckpt')
+    saver.save(sess, './models/wgan_v4.ckpt')
             
 
-with open('training_loss4_10.txt', 'w') as f:
+with open('training_loss4wgan.txt', 'w') as f:
     for ii in loss_lists:
         f.write('d_train_loss: '+str(ii)+'\n')
 
