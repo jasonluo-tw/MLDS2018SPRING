@@ -1,17 +1,18 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
-from gan_v4 import image_gan
+#from gan_v4 import image_gan
+from wgan_v4 import image_gan
 
 print("Generate images")
-batch_size = 64
+batch_size = 25
 z_dimension = 100
 ### init the model
 gan_model = image_gan(batch_size)
 gan_model.build_model()
 saver = tf.train.Saver()
 
-checkpoint_dir = './models'
+checkpoint_dir = './models/wgan/'
 
 init = tf.global_variables_initializer()
 
@@ -28,9 +29,9 @@ with tf.Session() as sess:
     testImage = testImage.reshape([batch_size, 64, 64, 3])
     testImage = (testImage + 1) / 2.
     for jj, im in enumerate(testImage):
-        plt.subplot(8, 8, jj+1)
+        plt.subplot(5, 5, jj+1)
         plt.axis('off')
         plt.imshow(im)
 
-plt.show()
-
+#plt.show()
+plt.savefig("../../../output_wgan.png")
