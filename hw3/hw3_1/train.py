@@ -4,18 +4,20 @@ import os
 import tensorflow as tf
 from tqdm import tqdm
 import matplotlib.pyplot as plt
-#from gan_v4 import image_gan
-from wgan_v4 import image_gan
+#from gan_v4_1 import image_gan
+from gan_v4_1test import image_gan
+#from wgan_v4 import image_gan
 from read_data import read_imgs
 import math
 
-print("Now train wgan_v4 ...")
+print("Now train gan_v4_1 with all tips ...")
 ####### Define some variables
 
 batch_size = 64
 z_dimension = 100
 # for test images
-z_batch0 = np.random.random([batch_size, z_dimension]) * 2 - 1 
+#z_batch0 = np.random.random([batch_size, z_dimension]) * 2 - 1 
+z_batch0 = np.random.normal(size=[batch_size, z_dimension]) 
 loss_lists = []
 ####################
 ## init the model ##
@@ -41,7 +43,7 @@ with tf.Session() as sess:
     print('Start pre-train discriminator')
 
     for i in range(51):
-        z_batch = np.random.uniform(-1, 1, size=[batch_size, z_dimension])
+        z_batch = np.random.normal(size=[batch_size, z_dimension])
         real_image_batch = datasets.next_batch(batch_size, True)
         d_loss_all = gan_model.train_discriminator(sess, real_image_batch, z_batch)
 
@@ -51,7 +53,7 @@ with tf.Session() as sess:
     # Train generator and discriminator together
     for itera in tqdm(range(20001)):
         real_image_batch = datasets.next_batch(batch_size, True)
-        z_batch = np.random.uniform(-1, 1, size=[batch_size, z_dimension])
+        z_batch = np.random.normal(size=[batch_size, z_dimension])
 
         # Train discriminator
         for ii in range(1):
@@ -59,7 +61,7 @@ with tf.Session() as sess:
                     sess, real_image_batch, z_batch)
 
         
-        z_batch = np.random.uniform(-1, 1, size=[batch_size, z_dimension])
+        z_batch = np.random.normal(size=[batch_size, z_dimension])
         # Train generator
         for ii in range(2):
             gg_loss = gan_model.train_generator(sess, z_batch)
@@ -78,12 +80,12 @@ with tf.Session() as sess:
                 plt.imshow(im)
 
             #plt.show()
-            plt.savefig('img4_w/test_img'+str(itera)+'.png')
+            plt.savefig('img4_11/test_img'+str(itera)+'.png')
 
-    saver.save(sess, './models/wgan_v4.ckpt')
+    saver.save(sess, './models/gan_v4_11.ckpt')
             
 
-with open('training_loss4wgan.txt', 'w') as f:
+with open('training_loss4_1.txt', 'w') as f:
     for ii in loss_lists:
         f.write('d_train_loss: '+str(ii)+'\n')
 

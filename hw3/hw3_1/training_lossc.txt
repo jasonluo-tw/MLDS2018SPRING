@@ -1,0 +1,11 @@
+d_train_loss: 3.11785
+d_train_loss: 0.240001
+d_train_loss: 0.0896827
+d_train_loss: 0.0516117
+d_train_loss: 0.027574
+d_train_loss: 0.0258854
+d_train_loss: 0.0196859
+d_train_loss: 0.0202134
+d_train_loss: 0.0118507
+d_train_loss: 0.00905013
+d_train_loss: 0.0139225

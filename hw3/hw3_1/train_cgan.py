@@ -4,8 +4,8 @@ import os
 import tensorflow as tf
 from tqdm import tqdm
 import matplotlib.pyplot as plt
-#from cgan import image_gan
-from cwgan import image_gan
+from cgan import image_gan
+#from cwgan import image_gan
 from read_data_cgan import read_imgs
 from read_data_cgan import setup_dicts
 import math
@@ -16,7 +16,7 @@ print("Now train cgan ...")
 batch_size = 64
 z_dimension = 100
 # for test images
-z_batch0 = np.random.random([batch_size, z_dimension]) * 2 - 1 
+z_batch0 = np.random.normal(size=[batch_size, z_dimension]) 
 tags00 = [1] + [0] * 119
 tags0 = [tags00 for i in range(batch_size)]
 loss_lists = []
@@ -46,7 +46,7 @@ with tf.Session() as sess:
     print('Start pre-train discriminator')
 
     for i in range(51):
-        z_batch = np.random.uniform(-1, 1, size=[batch_size, z_dimension])
+        z_batch = np.random.normal(size=[batch_size, z_dimension])
         real_image_batch, real_tags, fake_tags = datasets.next_batch(batch_size, True)
         d_loss_all = gan_model.train_discriminator(sess, real_image_batch, z_batch,
                 real_tags, fake_tags)
@@ -57,7 +57,7 @@ with tf.Session() as sess:
     # Train generator and discriminator together
     for itera in tqdm(range(10001)):
         real_image_batch, real_tags, fake_tags = datasets.next_batch(batch_size, True)
-        z_batch = np.random.uniform(-1, 1, size=[batch_size, z_dimension])
+        z_batch = np.random.normal(size=[batch_size, z_dimension])
 
         # Train discriminator
         for ii in range(4):
@@ -66,7 +66,7 @@ with tf.Session() as sess:
                     real_tags, fake_tags)
 
         
-        z_batch = np.random.uniform(-1, 1, size=[batch_size, z_dimension])
+        z_batch = np.random.normal(size=[batch_size, z_dimension])
         # Train generator
         for ii in range(3):
             gg_loss = gan_model.train_generator(sess, z_batch, real_tags)
