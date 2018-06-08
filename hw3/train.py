@@ -80,7 +80,7 @@ with tf.Session() as sess:
                 plt.imshow(im)
 
             #plt.show()
-            plt.savefig('img4_11/test_img'+str(itera)+'.png')
+            #plt.savefig('img4_11/test_img'+str(itera)+'.png')
 
     saver.save(sess, './models/gan_v4_11.ckpt')
             
