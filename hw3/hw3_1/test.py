@@ -3,7 +3,7 @@ import numpy as np
 import tensorflow as tf
 #from gan_v4 import image_gan
 #from gan_v4_1test import image_gan
-#from wgan_v4 import image_gan
+from wgan_v4 import image_gan
 
 print("Generate images")
 batch_size = 25
@@ -13,8 +13,8 @@ gan_model = image_gan(batch_size)
 gan_model.build_model()
 saver = tf.train.Saver()
 
-#checkpoint_dir = './models/wgan/'
-checkpoint_dir = './models/'
+checkpoint_dir = './models/wgan/'
+#checkpoint_dir = './models/gan_v4_1/'
 
 init = tf.global_variables_initializer()
 
@@ -26,6 +26,7 @@ with tf.Session() as sess:
     saver.restore(sess, ckpt.model_checkpoint_path)
 
     #z_batch0 = np.random.random([batch_size, z_dimension]) * 2 - 1 # for test images
+    np.random.seed(0)
     z_batch0 = np.random.normal(size=[batch_size, z_dimension]) # for test images
 
     testImage = gan_model.generate_image(sess, z_batch0)
@@ -37,4 +38,5 @@ with tf.Session() as sess:
         plt.imshow(im)
 
 #plt.show()
-plt.savefig("../../../output_tips.png")
+plt.savefig("samples/gan.png")
+#plt.savefig("../../../output_tips.png")

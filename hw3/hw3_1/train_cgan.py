@@ -55,7 +55,7 @@ with tf.Session() as sess:
             print("dLossAll: ", d_loss_all)
 
     # Train generator and discriminator together
-    for itera in tqdm(range(10001)):
+    for itera in tqdm(range(20001)):
         real_image_batch, real_tags, fake_tags = datasets.next_batch(batch_size, True)
         z_batch = np.random.normal(size=[batch_size, z_dimension])
 
@@ -85,7 +85,7 @@ with tf.Session() as sess:
                 plt.imshow(im)
 
             #plt.show()
-            plt.savefig('imgc/test_img'+str(itera)+'.png')
+            plt.savefig('./images_result/imgc/test_img'+str(itera)+'.png')
 
     saver.save(sess, './models/cgan.ckpt')
             

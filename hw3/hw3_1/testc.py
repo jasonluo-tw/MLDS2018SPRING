@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import sys
 import numpy as np
 import tensorflow as tf
 from cgan import image_gan
@@ -7,9 +8,9 @@ import math
 
 print("Generate images")
 
-dicts_ = setup_dicts('./dataset/extra_data/tags.csv')
+dicts_ = setup_dicts('./tags.csv')
 ## setup tags
-f = open('./dataset/AnimeDataset/sample_testing_text.txt', 'r')
+f = open(sys.argv[1], 'r')
 datas = f.readlines()
 tags0 = []
 for index, tagss in enumerate(datas):
@@ -21,6 +22,7 @@ for index, tagss in enumerate(datas):
 batch_size = len(tags0)
 z_dimension = 100
 #z_batch0 = np.random.random([batch_size, z_dimension]) * 2 - 1 # for test images
+np.random.seed(0)
 z_batch0 = np.random.normal(size=[batch_size, z_dimension]) # for test images
 
 ## model initiate
@@ -28,7 +30,7 @@ gan_model = image_gan(batch_size)
 gan_model.build_model()
 saver = tf.train.Saver()
 
-checkpoint_dir = './models/'
+checkpoint_dir = './models/cgan/'
 
 init = tf.global_variables_initializer()
 
@@ -48,6 +50,5 @@ with tf.Session() as sess:
         plt.axis('off')
         plt.imshow(im)
 
-plt.show()
-
-#plt.savefig('../../../gan-baseline/output_cgan.png')
+#plt.show()
+plt.savefig('./samples/cgan.png')
