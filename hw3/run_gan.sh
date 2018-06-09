@@ -5,7 +5,7 @@ if [ -d "./models" ]; then
 	echo "model exists"
 else
 	echo "model not exists"
-	wget --no-check-certificate ""
+	wget --no-check-certificate "https://www.dropbox.com/s/b7v6r96hv2nnt4l/models.tar.gz?dl=0" -O models.tar.gz
 	tar zxvf models.tar.gz
 fi
 

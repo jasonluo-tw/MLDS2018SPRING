@@ -1,2 +1,2 @@
-model_checkpoint_path: "gan_v4_11.ckpt"
-all_model_checkpoint_paths: "gan_v4_11.ckpt"
+model_checkpoint_path: "wgan_v4.ckpt"
+all_model_checkpoint_paths: "wgan_v4.ckpt"

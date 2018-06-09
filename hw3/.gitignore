@@ -1,3 +1,5 @@
+*.tar.gz
+models/
 dataset/
 train_loss/
 images_result/
