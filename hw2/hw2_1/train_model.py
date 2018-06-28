@@ -140,6 +140,8 @@ model.build_model()
 model.build_encoder()
 model.build_decoder()
 
+merged = tf.summary.merge_all()  # arange all of the summary
+
 saver = tf.train.Saver()
 
 init = tf.global_variables_initializer()
@@ -148,6 +150,9 @@ init = tf.global_variables_initializer()
 loss_lists = []
 ## sess
 with tf.Session() as sess:
+    
+    summary_writer = tf.summary.FileWriter('./summary', tf.get_default_graph())
+
     sess.run(init)
 
     #ckpt = tf.train.get_checkpoint_state(checkpoint_dir)
@@ -165,6 +170,7 @@ with tf.Session() as sess:
             
             model.input_data(video_in, label_, decoder_, target_)
             loss_train, _ = model.run_train(sess)
+
             cross_loss, eva_index = model.run_eval(sess) # greedy helper
             #print('ttttest:', ttest)
             if i % 5 == 0 and idx == 0:
@@ -184,6 +190,7 @@ with tf.Session() as sess:
                     print(w2vec_model.wv.index2word[int(indexx-1)], end= ' ')
 
         loss_lists.append([loss_train, cross_loss])
+"""
     if(os.path.isdir('./models')):
         print('\n')
         print('Directory exist!!!')
@@ -200,3 +207,4 @@ w2vec_model.save('./dicts/w2vec.model')
 #with open('training_loss'+str(sys.argv[1]).replace('.', '')+'.txt', 'w') as f:
 #    for ii, jj in loss_lists:
 #        f.write('train_loss: '+str(ii)+' eval_loss: '+str(jj))
+"""
