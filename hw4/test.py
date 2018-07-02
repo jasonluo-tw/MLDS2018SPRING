@@ -1,57 +1,63 @@
-import gym
-import time
-import matplotlib.pyplot as plt
+"""
+
+### NOTICE ###
+You DO NOT need to upload this file
+
+"""
+
+import argparse
 import numpy as np
+from environment import Environment
 
-def preprocess(I):
-    I = I[35:195]
-    y = 0.2126 * I[:, :, 0] + 0.7152 * I[:, :, 1] + 0.0722 * I[:, :, 2]
-    y = y / 255.
-    I[I == 144] = 0
-    I[I == 109] = 0
-    I[I != 0] = 1
-    return y.astype(np.float32)
+seed = 11037
+
+def parse():
+    parser = argparse.ArgumentParser(description="MLDS 2018 HW4")
+    parser.add_argument('--test_pg', action='store_true', help='whether test policy gradient')
+    parser.add_argument('--test_dqn', action='store_true', help='whether test DQN')
+    try:
+        from argument import add_arguments
+        parser = add_arguments(parser)
+    except:
+        pass
+    args = parser.parse_args()
+    return args
 
 
-env = gym.make("Pong-v0")
-for i_episode in range(10):
-    state = env.reset()
-    for t in range(200):
-        #env.render()
-        #time.sleep(1)
-        action = env.action_space.sample()
-        #print(action)
-        state, reward, done, info = env.step(action)
-        if done:
-            print("Episode finished after {} timesteps".format(t+1))
-            break
+def test(agent, env, total_episodes=30):
+    rewards = []
+    env.seed(seed)
+    for i in range(total_episodes):
+        state = env.reset()
+        agent.init_game_setting()
+        done = False
+        episode_reward = 0.0
 
-        cur_x = preprocess(state)
-        xx = []
-        yy = []
-        yyy = set()
-        for i in range(160):
-            if cur_x[i, 140] >= 0.5 and cur_x[i, 140] <= 0.7:
-                #print(cur_x[i, j], j, i)
-                xx.append(140)  # 140
-                yy.append(i)
-                yyy.add(i)
+        #playing one game
+        while(not done):
+            action = agent.make_action(state, test=True)
+            state, reward, done, info = env.step(action)
+            episode_reward += reward
 
-        #plt.imshow(cur_x, cmap='gray')
-        #plt.plot(xx, yy, 'r*')
-        #plt.show()
-        #print(yyy)
-        for cc in yyy:
-            for sub in range(5):
-                if cur_x[cc, 140-sub] >= 0.8:
-                    print(140-sub, cc)
-                    plt.imshow(cur_x, cmap='gray')
-                    plt.plot(xx, yy, 'r*')
-                    plt.show()
+        rewards.append(episode_reward)
+    print('Run %d episodes'%(total_episodes))
+    print('Mean:', np.mean(rewards))
 
-env.close()
 
-#state = env.reset()
-#action_size = env.action_space.n
-#_,_,_,_ = env.step(0)
-#print(env, state.shape, action_size)
+def run(args):
+    if args.test_pg:
+        env = Environment('Pong-v0', args, test=True)
+        from agent_dir.agent_pg import Agent_PG
+        agent = Agent_PG(env, args)
+        test(agent, env)
+
+    if args.test_dqn:
+        env = Environment('BreakoutNoFrameskip-v4', args, atari_wrapper=True, test=True)
+        from agent_dir.agent_dqn import Agent_DQN
+        agent = Agent_DQN(env, args)
+        test(agent, env, total_episodes=100)
+
+
+if __name__ == '__main__':
+    args = parse()
+    run(args)

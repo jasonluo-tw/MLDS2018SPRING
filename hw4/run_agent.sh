@@ -1,5 +1,5 @@
 #!/bin/bash
 
-python agent_pg.py
+python agent_pg3.py
 
 shutdown -h +5

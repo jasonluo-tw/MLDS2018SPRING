@@ -25,7 +25,7 @@ def prepro(o,image_size=[80,80]):
     return resized.astype(np.float32)
     #return np.expand_dims(resized.astype(np.float32),axis=2)
 
-def judge_ball_state(cur_x, rreward):
+def judge_ball_state(cur_x, rreward, episode):
     cur_x = np.squeeze(cur_x)
     xx = []
     #yy = []
@@ -37,22 +37,30 @@ def judge_ball_state(cur_x, rreward):
     for cc in yyy:
         for sub in range(2):
             if cur_x[cc, 140-sub] >= 0.8:
-                rreward = rreward + 0.05
+                if episode <= 100:
+                    rreward = rreward + 0.1
+                #else:
+                #    rreward = rreward + 0.05
                 #print('Yes')
     
     return rreward
 
-def preprocess(I, down_scale=True):
+def preprocess(I, down_scale=True, bin_pic=True):
     I = I[35:195]
     if down_scale:
         I = I[::2, ::2]
     y = 0.2126 * I[:, :, 0] + 0.7152 * I[:, :, 1] + 0.0722 * I[:, :, 2]
     y = y / 255. 
     
+    if bin_pic:  # Turn gray scale to binary scale
+        y[y >= 0.5] = 1.
+        y[y < 0.5] = 0.
+
     #I[I == 144] = 0
     #I[I == 109] = 0
     #I[I != 0] = 1
-    return np.expand_dims(np.expand_dims(y.astype(np.float32), axis=2), axis=0)
+    
+    return np.expand_dims(y.astype(np.float32), axis=0)
 
 class Agent_PG():
     #def __init__(self, env, args):
@@ -65,8 +73,8 @@ class Agent_PG():
         
         self.state_size = [80, 80, 1]
         self.action_size = 3
-        self.gamma = 0.96
-        self.learning_rate = 0.001
+        self.gamma = 0.99
+        self.learning_rate = 0.00025
         self.states = []
         self.gradients = []
         self.rewards = []
@@ -93,39 +101,22 @@ class Agent_PG():
 
     def _build_model(self):
         print("building model ...")
-        self.input = tf.placeholder(tf.float32, [None, 80, 80, 1], name='state_input')
+        self.input = tf.placeholder(tf.float32, [None, 80, 80], name='state_input')
         self.label_inputs = tf.placeholder(tf.float32, [None, self.action_size], name='rewards')
+        f1 = tf.reshape(self.input, [-1, 6400])
 
-        c_w1, c_b1 = self.weights('c_w1', [8, 8, 1, 16])
-        c1 = self.conv2d(self.input, c_w1)
-        c1 = tf.nn.relu(c1 + c_b1)
-
-        c_w2, c_b2 = self.weights('c_w2', [6, 6, 16, 32])
-        c2 = self.conv2d(c1, c_w2)
-        c2 = tf.nn.relu(c2 + c_b2)
-
-        #c_w3, c_b3 = self.weights('c_w3', [3, 3, 64, 128])
-        #c3 = self.conv2d(c2, c_w3)
-        #c3 = tf.nn.relu(c3 + c_b3)
-
-        c4 = tf.contrib.layers.flatten(c2)
-        c4_shape = c4.get_shape()[1]
-
-        f_w4, f_b4 = self.weights('f_w4', [c4_shape, 128])
-        f4 = tf.nn.relu(tf.matmul(c4, f_w4) + f_b4)
+        f_w2, f_b2 = self.weights('f_w2', [6400, 512])
+        f2 = tf.nn.relu(tf.matmul(f1, f_w2) + f_b2)
         
-        f_w5, f_b5 = self.weights('f_w5', [128, 64])
-        f5 = tf.nn.relu(tf.matmul(f4, f_w5) + f_b5)
-        
-        f_w6, f_b6 = self.weights('f_w6', [64, 32])
-        f6 = tf.nn.relu(tf.matmul(f5, f_w6) + f_b6)
+        f_w3, f_b3 = self.weights('f_w3', [512, 256])
+        f3 = tf.nn.relu(tf.matmul(f2, f_w3) + f_b3)
 
-        f_w7, f_b7 = self.weights('f_w7', [32, 3])
-        self.output = tf.nn.softmax(tf.matmul(f6, f_w7) + f_b7)
+        f_w4, f_b4 = self.weights('f_w4', [256, 3])
+        self.output = tf.nn.softmax(tf.matmul(f3, f_w4) + f_b4)
         
         ## define loss
         #crossent = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=self.label_inputs, logits=f7)
-        crossent = tf.reduce_mean(-tf.reduce_sum(self.label_inputs * tf.log(tf.clip_by_value(self.output,1e-10,10.0)), reduction_indices=[1]))
+        crossent = tf.reduce_mean(-tf.reduce_sum(self.label_inputs * tf.log(tf.clip_by_value(self.output,1e-15, 10.0)), reduction_indices=[1]))
         self.agent_train = tf.train.AdamOptimizer(self.learning_rate).minimize(crossent)
 
 
@@ -133,6 +124,7 @@ class Agent_PG():
         y = np.zeros([self.action_size])
         y[action] = 1
         self.gradients.append(np.array(y).astype('float32') - prob)
+        #self.gradients.append(np.array(y).astype('float32'))
         self.states.append(state)
         self.rewards.append(reward)
     
@@ -164,22 +156,24 @@ class Agent_PG():
         gradients = np.squeeze(np.array(self.gradients))
         rewards = np.array(self.rewards)
         rewards = self.discount_rewards(rewards)
-        rewards = rewards / np.std(rewards - np.mean(rewards))
+        rewards = (rewards - np.mean(rewards)) / np.std(rewards)
+        rewards = rewards - np.mean(rewards)
         rewards = rewards.repeat(self.action_size).reshape([rewards.shape[0], self.action_size])
         gradients *= rewards
         X = np.squeeze(np.array([self.states]))
-        X = np.expand_dims(X, axis=3)
         
-        Y = np.squeeze(np.array(self.probs)) + self.learning_rate * np.squeeze(np.array([gradients]))
+        #Y = np.squeeze(np.array(self.probs)) + self.learning_rate * np.squeeze(np.array([gradients]))
+        Y = np.squeeze(np.array([gradients]))
         
         ## train
         input_data = {}
         input_data[self.input] = X
         input_data[self.label_inputs] = Y
         sess.run(self.agent_train, feed_dict=input_data)
+        
         self.states, self.probs, self.gradients, self.rewards = [], [], [], []
 
-    def make_action(self, sess, observation, test=True):
+    def make_action(self, sess, observation, test=True, episode=1):
         """
         Return predicted action of your agent
 
@@ -195,19 +189,33 @@ class Agent_PG():
         aprob = sess.run(self.output, feed_dict={self.input: observation})
         self.probs.append(aprob)
         prob = aprob / np.sum(aprob)
-        #action = np.argmax(prob)
-        #print(action)
+        aa = np.random.random()
+        #if aa <= 0.01:
         action = np.random.choice(self.action_size, 1, p=prob[0])[0]
+        #else:
+        #    action = np.argmax(prob)
+        
+        """
+        elif episode <= 1000 and episode > 500 and aa < 0.2:
+            action = np.random.choice(self.action_size, 1)[0]
+        elif episode > 1000 and episode <= 2000 and aa < 0.1:
+            action = np.random.choice(self.action_size, 1)[0]
+        elif episode > 2000 and aa < 0.1:
+            action = np.random.choice(self.action_size, 1)[0]
+        """
+        #print(action)
+        
         return action, prob
 
 if __name__ == "__main__":
     # start playing environment
-    env = gym.make("Pong-v0")
+    env = gym.make("Pong-v0").unwrapped
+    env.seed(11037)
     prev_x = None
     score = 0
     save_scores = []
 
-    state_size = [1, 80, 80, 1]
+    state_size = [1, 80, 80]
     action_size = env.action_space.n
     
     # init agent
@@ -215,7 +223,11 @@ if __name__ == "__main__":
     agent._build_model()
 
     saver = tf.train.Saver()
-    checkpoint_dir = './models/'
+    checkpoint_dir = './models2/best/'
+    nn = 0
+    max_last30 = 4
+    mean_last30 = 0
+
     with tf.Session() as sess:
         # init global variables
         sess.run(tf.global_variables_initializer())
@@ -223,16 +235,16 @@ if __name__ == "__main__":
         ckpt = tf.train.get_checkpoint_state(checkpoint_dir)
         saver.restore(sess, ckpt.model_checkpoint_path)
 
-        for episode in range(1000):
+        for episode in range(500):
             state = env.reset()
             while True:
-                if episode % 100 == 0:
-                    env.render()
-                cur_x = preprocess(state)
+                #if episode % 10 == 0:
+                #    env.render()
+                cur_x = preprocess(state, True, False)
                 x = cur_x - prev_x if prev_x is not None else np.zeros(state_size)
                 prev_x = cur_x
     
-                action, prob = agent.make_action(sess, x)
+                action, prob = agent.make_action(sess, x, episode)
                 if(action == 0):
                     action2 = 1
                 elif(action == 1):
@@ -242,31 +254,39 @@ if __name__ == "__main__":
                 state, reward, done, info = env.step(action2)
                 score += reward
 
-                #cur_x2 = preprocess(state, False) 
-                #reward = judge_ball_state(cur_x2, reward)  # implement judge ball
-                #if score >= -5:
-                reward -= 0.05
+                #cur_x2 = preprocess(state, False, False) 
+                #reward = judge_ball_state(cur_x2, reward, episode)  # implement judge ball
                 
                 agent.remember(x, action, prob, reward)
-                
-                #if reward != 0:
-                #    agent.train(sess)
+
 
                 if done:
                     agent.train(sess)
                     print('Episode: %d - Score: %f.' % (episode, score))
                     save_scores.append(score)
-                    if (len(save_scores)+1) % 30 == 0:
+
+                    if (len(save_scores)) % 30 == 0:
                         mean_last30 = np.mean(save_scores[-30:])
                         print('Last 30 games mean scores:', mean_last30)
-
+                        
+                        with open('./models2/training_scores_test_seed.txt', 'a') as f:
+                            for ii,jj in enumerate(save_scores):
+                                f.write(str(episode -30 + ii)+':'+str(jj)+'\n')
+                        
+                        save_scores = []
+                        
+                        if mean_last30 > max_last30:
+                            nn = nn + 1
+                            saver.save(sess, './models2/best/PG_best.ckpt')
+                            max_last30 = mean_last30
+                        
                     score = 0
                     prev_x = None
-                    env.close()
+                    #env.close()
                     break
-        
-        saver.save(sess, './models/policy_1.ckpt')
-    
-    with open('training_scores2.txt', 'w') as f:
-        for ii,jj in enumerate(save_scores):
-            f.write(str(ii)+':'+str(jj)+'\n')
+
+            if mean_last30 <= -20.90:
+                print('The model break QQ')
+                break
+        saver.save(sess, './models2/policy_3.ckpt')    
+

@@ -14,8 +14,15 @@ import matplotlib.pyplot as plt
 #if 2 != 1:
 #    print('yes')
 
-y = set([1, 2, 3, 4])
-for i in y:
-    print(i)
+#y = set([1, 2, 3, 4])
+#for i in y:
+#    print(i)
 #plt.plot([1, 2], [3, 4], 'r*')
 #plt.show()
+
+#aa = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+#del aa[:5]
+#print(aa)
+
+a = np.random.random()
+print(a)
