@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [ -d "./models" ]; then
+if [ -d "./models2" ]; then
 	# file exists
 	echo "model exists"
 else
