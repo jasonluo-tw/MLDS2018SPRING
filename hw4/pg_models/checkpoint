@@ -1,0 +1,3 @@
+model_checkpoint_path: "policy_3.ckpt"
+all_model_checkpoint_paths: "best/PG_best.ckpt"
+all_model_checkpoint_paths: "policy_3.ckpt"
