@@ -3,7 +3,7 @@ import tensorflow as tf
 import scipy
 import gym
 import numpy as np
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 
 def preprocess(I, down_scale=True, bin_pic=True):
     I = I[35:195]
@@ -25,7 +25,7 @@ class Agent_PG():
         Initialize every things you need here.
         For example: building your model
         """
-        super(Agent_PG, self).__init__(env)
+        #super(Agent_PG, self).__init__(env)
         
         self.state_size = [80, 80, 1]
         self.action_size = 3
@@ -41,7 +41,7 @@ class Agent_PG():
             #you can load your model here
             print('loading trained model')
             saver = tf.train.Saver()
-            checkpoint_dir = '../pg_models/'
+            checkpoint_dir = './pg_models/'
             ckpt = tf.train.get_checkpoint_state(checkpoint_dir)
             saver.restore(self.sess, ckpt.model_checkpoint_path)
 
@@ -142,14 +142,14 @@ class Agent_PG():
         cur_x = preprocess(observation, True, False)
         x = cur_x - self.prev_x if self.prev_x is not None else np.zeros([1, 80, 80])
         self.prev_x = cur_x
-        aprob = sess.run(self.output, feed_dict={self.input: x})
+        aprob = self.sess.run(self.output, feed_dict={self.input: x})
         self.probs.append(aprob)
         prob = aprob / np.sum(aprob)
         aa = np.random.random()
         
         action = np.argmax(prob)
         if action== 0:
-            action2 == 1
+            action2 = 1
         elif action == 1:
             action2 = 2
         elif action == 2:
